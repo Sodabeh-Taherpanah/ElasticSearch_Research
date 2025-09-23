@@ -108,17 +108,17 @@ def evaluate_neural_retrieval(prof_dataset_path: str = "final_dataset.jsonl") ->
         print(f"\n -- NEURAL RETRIEVAL RESULTS:--")
         print(f" --Precision: {precision:.2%} ({len(relevant_retrieved)}/{len(retrieved_docs)})")
         print(f" --Recall: {recall:.2%} ({len(relevant_retrieved)}/{len(expected_docs)})")
-        print(f"✅-- F1-Score: {f1_score:.2%}")
+        print(f"-- F1-Score: {f1_score:.2%}")
         
         if relevant_retrieved:
-            print(f"✅ Relevant found: {sorted(relevant_retrieved)}")
+            print(f"-- Relevant found: {sorted(relevant_retrieved)}")
         
-        print(f"❌ Missing documents: {len(missing_docs)}")
+        print(f" -- Missing documents: {len(missing_docs)}")
         if missing_docs:
             print("   " + "\n   ".join(sorted(missing_docs)))
         
         # Top results analysis
-        print(f"\n🏆 TOP NEURAL RESULTS:")
+        print(f"\n -- TOP NEURAL RESULTS:")
         for i, hit in enumerate(results[:10]):
             relevance = "✓" if hit['_id'] in expected_docs else "✗"
             print(f"  {i+1}. [{relevance}] {hit['_id']} - Neural: {hit['_final_score']:.3f}")
