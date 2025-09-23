@@ -498,7 +498,6 @@ def evaluate_biomedical_thesis(prof_dataset_path="professor_dataset.jsonl", corp
     if relevant_retrieved:
         print(f"-- Relevant found: {relevant_retrieved}")
         
-        # CALL THE NEW ANALYSIS FUNCTION HERE
         if missing_docs:
             analyze_missing_documents(missing_docs, corpus_path)
     else:
