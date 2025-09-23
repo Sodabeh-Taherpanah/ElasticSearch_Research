@@ -1,4 +1,15 @@
-This repository demonstrates the power of **Elasticsearch** in biomedical information retrieval, with a focus on pure neural search and **Retrieval-Augmented Generation (RAG)** techniques. It showcases how Elasticsearch can efficiently index and retrieve biomedical documents using dense vector embeddings, and **compares**  its performance against a RAG-based pipeline.
+# ElasticSearch_Research
+
+This repository explores whether **Elasticsearch retrieval improvements can positively affect Retrieval-Augmented Generation (RAG) quality**. It investigates the impact of different Elasticsearch retrieval strategies — **sparse , dense (neural embeddings), hybrid, and pure neural search** — on the quality of large language model (LLM) outputs.
+
+The project compares:
+- **Traditional sparse retrieval (BM25)**  
+- **Dense retrieval with embeddings (E5, SPLADE)**  
+- **Hybrid retrieval (sparse + dense)**  
+- **Pure neural retrieval pipelines**  
+
+Finally, the results are analyzed in the context of **RAG pipelines**, showing how retrieval choice influences the **quality, accuracy, and relevance** of generated answers.
+
 
 ## Project Structure
 
