@@ -11,6 +11,9 @@ The project compares:
 Finally, the results are analyzed in the context of **RAG pipelines**, showing how retrieval choice influences the **quality, accuracy, and relevance** of generated answers.
 
 
+
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/4a963302-dcec-4a03-a9e8-42c22257b6e0" />
+
 ## Project Structure
 
 dataSet/: Contains datasets used for indexing and evaluation.
