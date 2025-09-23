@@ -1,4 +1,4 @@
-This repository demonstrates the power of ** Elasticsearch ** in biomedical information retrieval, with a focus on pure neural search and ** Retrieval-Augmented Generation (RAG) ** techniques. It showcases how Elasticsearch can efficiently index and retrieve biomedical documents using dense vector embeddings, and ** compares**  its performance against a RAG-based pipeline.
+This repository demonstrates the power of **Elasticsearch** in biomedical information retrieval, with a focus on pure neural search and **Retrieval-Augmented Generation (RAG)** techniques. It showcases how Elasticsearch can efficiently index and retrieve biomedical documents using dense vector embeddings, and **compares**  its performance against a RAG-based pipeline.
 
 ## Project Structure
 
