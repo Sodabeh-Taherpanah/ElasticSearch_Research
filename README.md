@@ -1,7 +1,7 @@
 This repository demonstrates the application of Elasticsearch in biomedical information retrieval, focusing on pure neural search and Retrieval-Augmented Generation (RAG) techniques. It includes indexing biomedical documents using dense vector embeddings and evaluating retrieval performance.
 
 
-** Project Structure
+## Project Structure
 
 dataSet/: Contains datasets used for indexing and evaluation.
 
