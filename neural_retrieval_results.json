@@ -1,0 +1,35 @@
+{
+  "precision": 0.34,
+  "recall": 0.7083333333333334,
+  "f1_score": 0.45945945945945954,
+  "relevant_retrieved": [
+    "MED-14",
+    "MED-2429",
+    "MED-10",
+    "MED-2431",
+    "MED-2428",
+    "MED-2430",
+    "MED-2434",
+    "MED-2427",
+    "MED-4830",
+    "MED-2440",
+    "MED-2436",
+    "MED-4829",
+    "MED-2437",
+    "MED-4828",
+    "MED-2439",
+    "MED-4559",
+    "MED-2438"
+  ],
+  "missing_docs": [
+    "MED-4560",
+    "MED-3599",
+    "MED-3598",
+    "MED-3597",
+    "MED-2435",
+    "MED-2432",
+    "MED-4556"
+  ],
+  "retrieved_count": 50,
+  "expected_count": 24
+}

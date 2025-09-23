@@ -10,7 +10,7 @@ import os
 # Set environment variable to handle MPS device issues
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
 
-# 1. Initialize Clients
+
 es = Elasticsearch(
     "https://localhost:9200",
     basic_auth=("elastic", "MyElasticPass123"),
@@ -18,21 +18,15 @@ es = Elasticsearch(
     request_timeout=120
 )
 
-# Use SparseEncoder instead of FastEmbed for the SPLADE model
-
 
 splade_model = SparseEncoder("naver/splade-cocondenser-ensembledistil")
 
-# Debug: Check what methods SparseEncoder has
-print(f"SparseEncoder methods: {[method for method in dir(splade_model) if not method.startswith('_')]}")
-print(f"SparseEncoder device: {getattr(splade_model, 'device', 'unknown')}")
 
-# Load biomedical-specific model
 biomedical_model_name = "microsoft/BiomedNLP-PubMedBERT-base-uncased-abstract"
 tokenizer = AutoTokenizer.from_pretrained(biomedical_model_name)
 dense_model = AutoModel.from_pretrained(biomedical_model_name)
 
-# 2. Biomedical query enhancement
+#  Biomedical query enhancement
 def enhance_biomedical_query(query):
     """
     Enhanced query expansion based on statin-breast cancer research and missing document analysis
@@ -101,7 +95,7 @@ def enhance_biomedical_query(query):
     
     return enhanced
 
-# 3. Biomedical embedding function
+# Biomedical embedding function
 def get_biomedical_embedding(text):
     """Generate embeddings using biomedical BERT"""
     inputs = tokenizer(
@@ -118,80 +112,29 @@ def get_biomedical_embedding(text):
     embeddings = outputs.last_hidden_state[:, 0, :].squeeze().numpy()
     return embeddings
 
-# 4. UPDATED SPLADE term extraction for SparseEncoder
-# def extract_biomedical_terms(sparse_embedding, original_query, top_k=20):
-#     """Extract and filter relevant biomedical terms from SparseEncoder output"""
-#     # SparseEncoder returns a dictionary with 'indices' and 'values'
-#     indices = sparse_embedding['indices']
-#     values = sparse_embedding['values']
-#     weighted_terms = list(zip(indices, values))
-#     weighted_terms.sort(key=lambda x: x[1], reverse=True)
-    
-#     # Priority biomedical terms for statin/cancer context
-#     priority_terms = {
-#         'cancer', 'tumor', 'stat', 'breast', 'drug', 'cholesterol', 'statin',
-#         'carcinogenic', 'therapy', 'patient', 'disease', 'medical', 'dose',
-#         'medication', 'risk', 'mortality', 'survival', 'recurrence', 'prevention',
-#         'treatment', 'clinical', 'study', 'effect', 'reduction', 'mortality'
-#     }
-    
-#     top_terms = []
-#     for token_id, weight in weighted_terms[:top_k*3]:
-#         try:
-#             # Convert token ID back to text using the biomedical tokenizer
-#             term = tokenizer.convert_ids_to_tokens(int(token_id))
-#             term = term.replace('Ġ', '').replace('▁', '').replace('##', '')
-            
-#             if (len(term) > 2 and 
-#                 not term.startswith('[') and 
-#                 term not in ['[CLS]', '[SEP]', '[PAD]', '[UNK]', 'cls', 'sep', 'pad', 'unk'] and
-#                 term.isalpha()):
-                
-#                 # Only include terms relevant to biomedical context
-#                 if (term in priority_terms or 
-#                     any(keyword in term for keyword in ['med', 'cancer', 'tumor', 'stat', 'drug'])):
-#                     boosted_weight = weight * 3.0 if term in priority_terms else weight
-#                     top_terms.append((term, float(boosted_weight)))
-                
-#         except:
-#             continue
-    
-#     # If SPLADE fails, use manual terms from original query
-#     if not top_terms or len(top_terms) < 5:
-#         manual_terms = [
-#             ('statin', 3.0),      # Slightly higher weight
-#             ('breast', 3.0),      # Slightly higher weight  
-#             ('cancer', 3.0),      # Slightly higher weight
-#             ('cholesterol', 2.0), # Moderate weight
-#             ('drug', 2.0),        # Moderate weight
-#             ('cause', 1.5)        # Slightly higher weight
-#         ]
-#         top_terms = [(term, weight) for term, weight in manual_terms if term in original_query.lower()]
-    
-#     return top_terms[:top_k]
+
+#  return top_terms[:top_k]
 def extract_biomedical_terms(sparse_embedding, original_query, top_k=15):
     """Extract and filter relevant biomedical terms from SparseEncoder output"""
     
-    # Debug: Check what format sparse_embedding has
-    print(f"   Sparse embedding type: {type(sparse_embedding)}")
     if hasattr(sparse_embedding, 'shape'):
         print(f"   Sparse embedding shape: {sparse_embedding.shape}")
     
     # Handle different SparseEncoder output formats
     if isinstance(sparse_embedding, dict) and 'indices' in sparse_embedding:
-        # Old format: dictionary with indices and values
+        # first format: dictionary with indices and values
         indices = sparse_embedding['indices']
         values = sparse_embedding['values']
         weighted_terms = list(zip(indices, values))
         
     elif hasattr(sparse_embedding, 'indices') and hasattr(sparse_embedding, 'values'):
-        # New format: object with indices and values attributes
+        # second format: object with indices and values attributes
         indices = sparse_embedding.indices
         values = sparse_embedding.values
         weighted_terms = list(zip(indices, values))
         
     elif isinstance(sparse_embedding, (list, np.ndarray, torch.Tensor)):
-        # Direct array/tensor format - convert to (index, value) pairs
+      
         if isinstance(sparse_embedding, torch.Tensor):
             sparse_embedding = sparse_embedding.cpu().numpy()
         
@@ -204,7 +147,7 @@ def extract_biomedical_terms(sparse_embedding, original_query, top_k=15):
             weighted_terms = [(i, val) for i, val in enumerate(sparse_embedding) if val > 0]
             
     else:
-        print(f"   Unknown sparse embedding format: {type(sparse_embedding)}")
+     
         return []
     
     weighted_terms.sort(key=lambda x: x[1], reverse=True)
@@ -215,7 +158,7 @@ def extract_biomedical_terms(sparse_embedding, original_query, top_k=15):
         'carcinogenic', 'therapy', 'patient', 'disease', 'medical', 'dose',
         'medication', 'risk', 'mortality', 'survival', 'recurrence', 'prevention',
         'treatment', 'clinical', 'study', 'effect', 'reduction', 'mortality',
-        # Add dietary terms based on analysis
+        # Add dietary terms based on previous analysis
         'diet', 'nutrition', 'soy', 'fiber', 'plant', 'food', 'dietary',
         'phytoestrogen', 'lignan'
     }
@@ -232,7 +175,7 @@ def extract_biomedical_terms(sparse_embedding, original_query, top_k=15):
                 term not in ['[CLS]', '[SEP]', '[PAD]', '[UNK]', 'cls', 'sep', 'pad', 'unk'] and
                 term.isalpha()):
                 
-                # Only include terms relevant to biomedical context
+                #  include terms relevant to biomedical context
                 if (term in priority_terms or 
                     any(keyword in term for keyword in ['med', 'cancer', 'tumor', 'stat', 'drug', 'diet', 'nutri'])):
                     boosted_weight = weight * 3.0 if term in priority_terms else weight
@@ -258,7 +201,7 @@ def extract_biomedical_terms(sparse_embedding, original_query, top_k=15):
             top_terms.extend([('dietary', 2.0), ('nutrition', 2.0), ('food', 1.8)])
     
     return top_terms[:top_k]
-# 5. Missing Document Analysis Function
+# 5. Missing Document Analysis
 def analyze_missing_documents(missing_docs, corpus_path="corpus.jsonl"):
     """
     Analyze terminology patterns in missing documents to understand why they weren't retrieved
@@ -266,7 +209,7 @@ def analyze_missing_documents(missing_docs, corpus_path="corpus.jsonl"):
     terminology_patterns = {}
     document_types = {}
     
-    print(f"\n🔍 Analyzing {len(missing_docs)} missing documents...")
+    print(f"\n-- Analyzing {len(missing_docs)} missing documents...")
     
     try:
         with open(corpus_path, 'r') as f:
@@ -314,8 +257,8 @@ def analyze_missing_documents(missing_docs, corpus_path="corpus.jsonl"):
         print(f"Error analyzing missing documents: {e}")
         return
     
-    # Print analysis results
-    print("\n📊 Missing Document Analysis Results:")
+  
+    print("\n-- Missing Document Analysis Results:")
     print("Study Types:")
     for doc_type, count in sorted(document_types.items(), key=lambda x: x[1], reverse=True):
         print(f"  {doc_type}: {count} documents")
@@ -337,7 +280,7 @@ def analyze_missing_documents(missing_docs, corpus_path="corpus.jsonl"):
         print("  No dietary-related patterns found in missing documents")
 
     # Additional detailed dietary analysis
-    print("\n📈 Detailed Dietary Analysis:")
+    print("\n-- Detailed Dietary Analysis:")
     try:
         dietary_missing_docs = []
         strong_dietary_docs = []
@@ -371,17 +314,17 @@ def analyze_missing_documents(missing_docs, corpus_path="corpus.jsonl"):
     except Exception as e:
         print(f"Error in detailed dietary analysis: {e}")
 
-# 6. UPDATED HYBRID Search for SparseEncoder
+#  HYBRID Search for SparseEncoder
 def biomedical_hybrid_search(query, index_name="biomedical_hybrid_index", top_k=10):
     """Robust hybrid search with fallback mechanisms"""
-    print(f"🔍 Original Query: '{query}'")
+    print(f"-- Original Query: '{query}'")
     
     # Enhance query first
     enhanced_query = enhance_biomedical_query(query)
     print(f"   Enhanced Query: '{enhanced_query[:200]}...'")
     
     # Generate SPLADE expansion using SparseEncoder
-    splade_terms = []  # Initialize empty list first
+    splade_terms = [] 
     try:
         # Try different method names that SparseEncoder might use
         if hasattr(splade_model, 'encode_queries'):
@@ -394,7 +337,7 @@ def biomedical_hybrid_search(query, index_name="biomedical_hybrid_index", top_k=
         elif hasattr(splade_model, 'embed'):
             splade_embedding = splade_model.embed([enhanced_query])[0]
         else:
-            # If no known method, use the first available method that takes text
+           
             raise Exception("No known encoding method found for SparseEncoder")
         
         splade_terms = extract_biomedical_terms(splade_embedding, query, top_k=15)
@@ -403,19 +346,19 @@ def biomedical_hybrid_search(query, index_name="biomedical_hybrid_index", top_k=
     except Exception as e:
         print(f"   SPLADE failed: {e}, using manual terms")
         splade_terms = [
-            ('statin', 3.0),      # Slightly higher weight
-            ('breast', 3.0),      # Slightly higher weight  
-            ('cancer', 3.0),      # Slightly higher weight
-            ('cholesterol', 2.0), # Moderate weight
-            ('drug', 2.0),        # Moderate weight
-            ('cause', 1.5)        # Slightly higher weight
+            ('statin', 3.0),     
+            ('breast', 3.0),      
+            ('cancer', 3.0),     
+            ('cholesterol', 2.0),
+            ('drug', 2.0),       
+            ('cause', 1.5)        
         ]
         splade_term_list = [term for term, weight in splade_terms]
     
-    # Generate biomedical embedding
+    
     query_biomedical_vector = get_biomedical_embedding(enhanced_query).tolist()
     
-    # Build robust query
+
     search_body = {
         "size": top_k,
         "query": {
@@ -516,7 +459,7 @@ def index_corpus_biomedical(corpus_path="corpus.jsonl"):
     print("Indexing complete!")
     es.indices.refresh(index=index_name)
 
-# 8. UPDATED Evaluation function with missing document analysis
+
 def evaluate_biomedical_thesis(prof_dataset_path="professor_dataset.jsonl", corpus_path="corpus.jsonl"):
     """Evaluate retrieval performance with missing document analysis"""
     print("\n" + "="*60)
@@ -545,7 +488,7 @@ def evaluate_biomedical_thesis(prof_dataset_path="professor_dataset.jsonl", corp
     precision = len(relevant_retrieved) / len(retrieved_docs) if retrieved_docs else 0
     recall = len(relevant_retrieved) / len(expected_docs) if expected_docs else 0
     
-    print(f"\n📊 RESULTS:")
+    print(f"\n-- RESULTS:")
     print(f"Precision: {precision:.1%} ({len(relevant_retrieved)}/{len(retrieved_docs)})")
     print(f"Recall: {recall:.1%} ({len(relevant_retrieved)}/{len(expected_docs)})")
     
@@ -553,22 +496,22 @@ def evaluate_biomedical_thesis(prof_dataset_path="professor_dataset.jsonl", corp
     print(f"Missing documents: {len(missing_docs)} documents")
     
     if relevant_retrieved:
-        print(f"✅ Relevant found: {relevant_retrieved}")
+        print(f"-- Relevant found: {relevant_retrieved}")
         
         # CALL THE NEW ANALYSIS FUNCTION HERE
         if missing_docs:
             analyze_missing_documents(missing_docs, corpus_path)
     else:
-        print("❌ No relevant documents found")
+        print("-- No relevant documents found")
     
     return precision, recall
 
-# 9. Main execution
+
 if __name__ == "__main__":
-    # Run indexing first (uncomment below)
-    # print("Indexing corpus...")
-    # index_corpus_biomedical("corpus.jsonl")
+   
     
-    # Then evaluate
+    index_corpus_biomedical("corpus.jsonl")
+    
+   
     print("Starting evaluation...")
     precision, recall = evaluate_biomedical_thesis("professor_dataset.jsonl")

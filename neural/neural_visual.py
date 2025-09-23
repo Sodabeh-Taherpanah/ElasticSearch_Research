@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-# Example results (replace with your actual experiment results)
+
 methods = ["SPLADE Hybrid", "RRF Fusion", "Neural Retrieval"]
 precision = [0.667, 0.25, 0.34]
 recall = [0.333, 0.125, 0.7083]
@@ -31,7 +31,7 @@ A line chart showing how recall improves as you increase the number of retrieved
 
 This shows whether your model finds relevant docs early or only after retrieving many.
 
-🔹 3. Confusion View: Retrieved vs. Missing Docs
+ 3. Confusion View: Retrieved vs. Missing Docs
 
 A pie chart or stacked bar chart showing the proportion of:
 

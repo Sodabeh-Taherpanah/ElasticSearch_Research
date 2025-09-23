@@ -11,7 +11,7 @@ from collections import defaultdict
 # Disable SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Initialize
+
 es = Elasticsearch(
     "https://localhost:9200",
     basic_auth=("elastic", "MyElasticPass123"),
@@ -28,7 +28,7 @@ cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2', device=str(
 
 def enhance_biomedical_query(query: str) -> str:
     """Neural query enhancement - no traditional expansion"""
-    # Pure neural approach - let the model handle semantics
+    # Pure neural approach , the model handle semantics
     return f"query: {query} biomedical research clinical study"
 
 def get_neural_embedding(text: str) -> np.ndarray:
@@ -44,7 +44,7 @@ def pure_neural_search(query: str, index_name: str = "neural_biomedical_index", 
     query_vector = get_neural_embedding(enhanced_query).tolist()
     
     try:
-        # Pure vector search only
+        # Pure vector search 
         search_body = {
             "knn": {
                 "field": "dense_vector",
@@ -77,10 +77,10 @@ def pure_neural_search(query: str, index_name: str = "neural_biomedical_index", 
         return hits[:top_k]
         
     except Exception as e:
-        print(f"❌ Neural search failed: {e}")
+        print(f"-- Neural search failed: {e}")
         return []
 
-def evaluate_neural_retrieval(prof_dataset_path: str = "professor_dataset.jsonl") -> Dict[str, Any]:
+def evaluate_neural_retrieval(prof_dataset_path: str = "final_dataset.jsonl") -> Dict[str, Any]:
     """Comprehensive evaluation of pure neural retrieval"""
     
     try:
@@ -90,8 +90,8 @@ def evaluate_neural_retrieval(prof_dataset_path: str = "professor_dataset.jsonl"
         query = prof_data["question"]
         expected_docs = set(prof_data["expected_resources"])
         
-        print(f"🔬 Evaluating: '{query}'")
-        print(f"📋 Expected documents: {len(expected_docs)}")
+        print(f"-- Evaluating: '{query}'")
+        print(f"-- Expected documents: {len(expected_docs)}")
         
         # Pure neural retrieval
         results = pure_neural_search(query, top_k=50)
@@ -105,10 +105,10 @@ def evaluate_neural_retrieval(prof_dataset_path: str = "professor_dataset.jsonl"
         f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
         
         # Detailed analysis
-        print(f"\n📊 NEURAL RETRIEVAL RESULTS:")
-        print(f"✅ Precision: {precision:.2%} ({len(relevant_retrieved)}/{len(retrieved_docs)})")
-        print(f"✅ Recall: {recall:.2%} ({len(relevant_retrieved)}/{len(expected_docs)})")
-        print(f"✅ F1-Score: {f1_score:.2%}")
+        print(f"\n -- NEURAL RETRIEVAL RESULTS:--")
+        print(f" --Precision: {precision:.2%} ({len(relevant_retrieved)}/{len(retrieved_docs)})")
+        print(f" --Recall: {recall:.2%} ({len(relevant_retrieved)}/{len(expected_docs)})")
+        print(f"✅-- F1-Score: {f1_score:.2%}")
         
         if relevant_retrieved:
             print(f"✅ Relevant found: {sorted(relevant_retrieved)}")
@@ -134,51 +134,92 @@ def evaluate_neural_retrieval(prof_dataset_path: str = "professor_dataset.jsonl"
         }
         
     except Exception as e:
-        print(f"❌ Evaluation failed: {e}")
+        print(f"-- Evaluation failed: {e}")
         return {}
+
+
+def evaluate_neural_retrieval_all(prof_dataset_path: str = "final_dataset.jsonl") -> Dict[str, Any]:
+    """Evaluate pure neural retrieval for whole queries in the dataset."""
+    
+    total_relevant_retrieved = 0
+    total_retrieved = 0
+    total_expected = 0
+    all_missing_docs = []
+    
+    try:
+        with open(prof_dataset_path, 'r') as f:
+            for line in f:
+                prof_data = json.loads(line.strip())
+                
+                query = prof_data["question"]
+                expected_docs = set(prof_data["expected_resources"])
+                
+               
+                results = pure_neural_search(query, top_k=50)
+                retrieved_docs = [hit['_id'] for hit in results]
+                
+                relevant_retrieved = [doc for doc in retrieved_docs if doc in expected_docs]
+                missing_docs = expected_docs - set(retrieved_docs)
+                
+                # Accumulate totals
+                total_relevant_retrieved += len(relevant_retrieved)
+                total_retrieved += len(retrieved_docs)
+                total_expected += len(expected_docs)
+                all_missing_docs.extend(list(missing_docs))
+                
+    except Exception as e:
+        print(f" Evaluation failed: {e}")
+        return {}
+    
+    # Compute overall metrics
+    precision = total_relevant_retrieved / total_retrieved if total_retrieved else 0
+    recall = total_relevant_retrieved / total_expected if total_expected else 0
+    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+    
+    print(f"\n NEURAL RETRIEVAL OVERALL RESULTS:")
+    print(f" Precision: {precision:.2%} ({total_relevant_retrieved}/{total_retrieved})")
+    print(f"-- Recall: {recall:.2%} ({total_relevant_retrieved}/{total_expected})")
+    print(f"-- F1-Score: {f1_score:.2%}")
+    print(f" -- Total missing documents: {len(all_missing_docs)}")
+    
+    return {
+        "precision": precision,
+        "recall": recall,
+        "f1_score": f1_score,
+        "total_retrieved": total_retrieved,
+        "total_expected": total_expected,
+        "total_relevant_retrieved": total_relevant_retrieved,
+        "missing_docs": all_missing_docs
+    }
 
 def generate_evaluation_report(results: Dict[str, Any]):
     """Generate comprehensive evaluation report"""
     
     print("\n" + "="*60)
-    print("📈 NEURAL RETRIEVAL EVALUATION REPORT")
+    print("-- NEURAL RETRIEVAL EVALUATION REPORT")
     print("="*60)
     
-    print(f"🎯 Final Score: {results['f1_score']:.2%} F1")
-    print(f"📊 Precision: {results['precision']:.2%}")
-    print(f"📊 Recall: {results['recall']:.2%}")
-    print(f"📄 Documents retrieved: {results['retrieved_count']}")
-    print(f"✅ Relevant found: {len(results['relevant_retrieved'])}/{results['expected_count']}")
-    print(f"❌ Documents missed: {len(results['missing_docs'])}")
+    print(f"-- Final Score: {results['f1_score']:.2%} F1")
+    print(f"-- Precision: {results['precision']:.2%}")
+    print(f"-- Recall: {results['recall']:.2%}")
+    print(f"-- Documents retrieved: {results['retrieved_count']}")
+    print(f"-- Relevant found: {len(results['relevant_retrieved'])}/{results['expected_count']}")
+    print(f"-- Documents missed: {len(results['missing_docs'])}")
     
-    # Analysis
-    if results['recall'] < 0.5:
-        print("\n💡 RECOMMENDATION: Focus on recall improvement")
-        print("   - Increase top_k parameter")
-        print("   - Enhance query understanding")
-        print("   - Consider model fine-tuning")
-    elif results['precision'] < 0.5:
-        print("\n💡 RECOMMENDATION: Focus on precision improvement") 
-        print("   - Improve cross-encoder re-ranking")
-        print("   - Add negative examples")
-        print("   - Tune score weights")
-    else:
-        print("\n💡 EXCELLENT: Both precision and recall are good!")
 
 if __name__ == "__main__":
-    print("🧠 Starting Pure Neural Retrieval Evaluation")
+    print("-- Neural Retrieval Evaluation --")
     print("="*60)
     
-    # Run evaluation
-    results = evaluate_neural_retrieval("professor_dataset.jsonl")
-    
+    results = evaluate_neural_retrieval("final_dataset.jsonl")
+
     if results:
         generate_evaluation_report(results)
         
-        # Save results for thesis
+        # Save results
         with open("neural_retrieval_results.json", "w") as f:
             json.dump(results, f, indent=2)
-        print(f"\n💾 Results saved to neural_retrieval_results.json")
+        
     
     print("="*60)
-    print("✅ Pure Neural Evaluation Completed!")
+    

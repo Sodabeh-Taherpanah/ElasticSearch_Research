@@ -9,7 +9,7 @@ import numpy as np
 # Disable SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Initialize Elasticsearch
+
 es = Elasticsearch(
     "https://localhost:9200",
     basic_auth=("elastic", "MyElasticPass123"),
@@ -18,11 +18,11 @@ es = Elasticsearch(
     request_timeout=120
 )
 
-# Initialize E5-large model (best for pure neural retrieval)
+# Init E5-large model
 device = torch.device("mps") if torch.backends.mps.is_available() else torch.device("cpu")
-e5_model_name = "intfloat/e5-large-v2"  # 1024 dimensions for best performance
+e5_model_name = "intfloat/e5-large-v2"  # 1024 dimensions for having best performance
 e5_model = SentenceTransformer(e5_model_name, device=device)
-print(f"🧠 Using {e5_model_name} on {device}")
+
 
 def get_dense_embedding(text):
     """Generate high-quality embeddings"""
@@ -33,13 +33,13 @@ def create_neural_index(index_name="neural_biomedical_index"):
     
     if es.indices.exists(index=index_name):
         es.indices.delete(index=index_name)
-        print("🗑️ Deleted existing index")
+        print("-- Deleted existing index")
     
-    # Pure neural index - no text analysis needed for BM25
+    # Pure neural index 
     index_body = {
         "mappings": {
             "properties": {
-                "title": {"type": "text"},  # Only for display
+                "title": {"type": "text"},  
                 "text": {"type": "text"},   # Only for display
                 "dense_vector": {
                     "type": "dense_vector",
@@ -52,7 +52,7 @@ def create_neural_index(index_name="neural_biomedical_index"):
     }
     
     es.indices.create(index=index_name, body=index_body)
-    print(f"✅ Created pure neural index: {index_name}")
+    
     return index_name
 
 def index_documents_neural(corpus_path="corpus.jsonl", index_name="neural_biomedical_index"):
@@ -67,7 +67,7 @@ def index_documents_neural(corpus_path="corpus.jsonl", index_name="neural_biomed
             try:
                 doc = json.loads(line.strip())
                 
-                # Generate high-quality embedding
+                # Generate  embedding
                 embedding = get_dense_embedding(doc["text"])
                 
                 es_doc = {
@@ -85,12 +85,12 @@ def index_documents_neural(corpus_path="corpus.jsonl", index_name="neural_biomed
                 successful_count += 1
                 
             except Exception as e:
-                print(f"❌ Error indexing {doc.get('_id', 'unknown')}: {e}")
+                print(f"-- Error indexing {doc.get('_id', 'unknown')}: {e}")
                 continue
 
     es.indices.refresh(index=index_name)
     count = es.count(index=index_name)["count"]
-    print(f"✅ Neural indexing complete! Documents: {count}")
+    print(f"-- Neural indexing complete! Documents: {count}")
     
     # Verify dimensions
     verify_indexing(index_name)
@@ -102,10 +102,10 @@ def verify_indexing(index_name):
         if sample['hits']['hits']:
             dims = len(sample['hits']['hits'][0]['_source']['dense_vector'])
             expected = e5_model.get_sentence_embedding_dimension()
-            print(f"🔍 Vector dimensions: {dims} (expected: {expected})")
+            print(f"-- Vector dimensions: {dims} (expected: {expected})")
             return dims == expected
     except Exception as e:
-        print(f"❌ Verification failed: {e}")
+        print(f"-- Verification failed: {e}")
         return False
 
 if __name__ == "__main__":
