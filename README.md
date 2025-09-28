@@ -32,6 +32,16 @@ Ensure you have the following dependencies installed:
 
 pip install elasticsearch sentence-transformers torch tqdm matplotlib
 
+##Run docker, before running index and retrival python files.
+
+docker run -d \
+  --name elasticsearch \
+  -p 9200:9200 \
+  -e "discovery.type=single-node" \
+  -e "ELASTIC_PASSWORD=MyElasticPass123" \
+  docker.elastic.co/elasticsearch/elasticsearch:8.15.0
+  
+
 ##Neural Indexing
 
 The neural/ directory contains scripts for indexing biomedical documents using dense vector embeddings from the intfloat/e5-large-v2 model. This approach enables semantic search capabilities in Elasticsearch.
